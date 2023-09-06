@@ -1,7 +1,7 @@
 ﻿using MassTransit;
 using MessageContracts;
 using TestClient;
-using static MessageContracts.MessageContracts;
+using static MessageContracts.MessageContract;
 
 Console.WriteLine("Waiting while consumers initialize.");
 await Task.Delay(3000); //because the consumers need to start first

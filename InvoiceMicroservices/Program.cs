@@ -1,7 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using InvoiceMicroservices;
 using MassTransit;
-using static MessageContracts.MessageContracts;
+using static MessageContracts.MessageContract;
 
 var busControl = Bus.Factory.CreateUsingRabbitMq(cfg =>
 {

@@ -1,6 +1,6 @@
 ﻿namespace MessageContracts
 {
-    public class MessageContracts
+    public class MessageContract
     {
         public interface IInvoiceCreated
         { 
