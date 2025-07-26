@@ -44,11 +44,7 @@ static async Task SendRequestForInvoiceCreation(IPublishEndpoint publishEndpoint
     await publishEndpoint.Publish<IInvoiceToCreate>(new
     {
         CustomerNumber = rnd.Next(1000, 9999),
-        InvoiceItems = new List<InvoiceItems>()
-          {
-            new InvoiceItems{Description="Tables", Price=Math.Round(rnd.NextDouble()*100,2), ActualMileage = 40, BaseRate = 12.50, IsHazardousMaterial = false, IsOversized = true, IsRefrigerated = false},
-            new InvoiceItems{Description="Chairs", Price=Math.Round(rnd.NextDouble()*100,2), ActualMileage = 40, BaseRate = 12.50, IsHazardousMaterial = false, IsOversized = false, IsRefrigerated = false}
-          }
+        InvoiceItems = InvoiceItemsMock.GetRandomListOrNull()
     });
 }
 

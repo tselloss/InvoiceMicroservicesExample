@@ -2,58 +2,87 @@ using FluentAssertions;
 using InvoiceMicroservices;
 using MassTransit.Testing;
 using MessageContracts;
+using Xunit;
 using static MessageContracts.MessageContract;
 
 namespace ProviderTests
 {
-    public class ProducerTest
+    public class ProducerTest : IAsyncLifetime
     {
+        private readonly InMemoryTestHarness _harness;
+        private ConsumerTestHarness<EventConsumer> _consumerHarness;
+
+        public ProducerTest()
+        {
+            _harness = new InMemoryTestHarness();
+        }
+
+        public async Task InitializeAsync()
+        {
+            _consumerHarness = _harness.Consumer<EventConsumer>();
+
+            await _harness.Start();
+        }
+
         [Fact]
         public async Task Verify_InvoiceToCreateCommand_Consumed()
         {
-            //Verify that we are receiving and reacting
-            //to a command to create an invoice
-            var harness = new InMemoryTestHarness();
-            var consumerHarness = harness.Consumer<EventConsumer>();
-            await harness.Start();
-
-            try
-            {
-                await harness.InputQueueSendEndpoint.Send<IInvoiceToCreate>(
+            await _harness.InputQueueSendEndpoint.Send<IInvoiceToCreate>(
                 new
                 {
                     CustomerNumber = 19282,
-                    InvoiceItems = new List<InvoiceItems>()
+                    InvoiceItems = new List<InvoiceItems>
                     {
-                        new InvoiceItems
-                        {
-                        Description="Tables",
-                        Price=Math.Round(1020.99),
+                    new InvoiceItems
+                    {
+                        Description = "Tables",
+                        Price = Math.Round(1020.99),
                         ActualMileage = 40,
                         BaseRate = 12.50,
                         IsHazardousMaterial = false,
                         IsOversized = true,
                         IsRefrigerated = false
-                        }
-                     }
+                    }
+                    }
                 });
-                //verify endpoint consumed the message
-                Assert.True(await harness.Consumed.Any<IInvoiceToCreate>());
-                //verify the real consumer consumed the message
-                Assert.True(await consumerHarness.Consumed.Any<IInvoiceToCreate>());
-                //verify that a new message was published
-                //because of the new invoice being created
-                harness.Published.Select<IInvoiceCreated>()
-                    .Count()
-                    .Should()
-                    .Be(1);
-            }
-            finally
-            {
-                await harness.Stop();
-            }
+
+            // Assert that the message was consumed by the harness
+            Assert.True(await _harness.Consumed.Any<IInvoiceToCreate>(), "Message was not consumed by the harness");
+
+            // Assert that the message was handled by the actual consumer
+            Assert.True(await _consumerHarness.Consumed.Any<IInvoiceToCreate>(), "Message was not consumed by the consumer");
+
+            // Assert that the IInvoiceCreated message was published
+            (await _harness.Published.Any<IInvoiceCreated>()).Should().BeTrue("No IInvoiceCreated message was published");
         }
 
+        [Fact]
+        public async Task Should_Publish_InvoiceCreationFailed_When_Exception_Occurs()
+        {
+            var customerNumber = 12345;
+
+            // Send a message that triggers an exception (InvoiceItems = null)
+            await _harness.InputQueueSendEndpoint.Send<IInvoiceToCreate>(
+                new
+                {
+                    CustomerNumber = customerNumber,
+                    InvoiceItems = new List<InvoiceItems>()
+                });
+
+            var publishedInvoiceCreated = await _harness.Published.Any<IInvoiceCreated>();
+            publishedInvoiceCreated.Should().BeFalse();
+
+            var failedEvent = (await _harness.Published.SelectAsync<IInvoiceCreationFailed>().FirstOrDefault());
+            failedEvent.Should().NotBeNull();
+            failedEvent.Context.Message.Error
+                    .Should().Contain($"Error creating invoice for customer {customerNumber}");
+        }
+
+        public async Task DisposeAsync()
+        {
+            await _harness.Stop();
+        }
     }
 }
+
 

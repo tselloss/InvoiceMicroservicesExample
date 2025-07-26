@@ -1,19 +1,15 @@
 ﻿using MassTransit;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static MessageContracts.MessageContract;
 
 namespace PaymentMicroservice
 {
-   public class InvoiceCreatedConsumer : IConsumer<IInvoiceCreated>
+    public class InvoiceCreatedConsumer : IConsumer<IInvoiceCreated>
     {
-        public async Task Consume(ConsumeContext<IInvoiceCreated> context)
+        public Task Consume(ConsumeContext<IInvoiceCreated> context)
         {
-            await Task.Run(() =>
-              Console.WriteLine($"Received message for invoice number: {context.Message.InvoiceNumber}"));
+            Console.WriteLine($"Received message for invoice number: {context.Message.InvoiceNumber}");
+
+            return Task.CompletedTask;
         }
     }
 }

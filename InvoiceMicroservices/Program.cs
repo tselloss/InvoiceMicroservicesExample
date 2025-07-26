@@ -1,11 +1,14 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using InvoiceMicroservices;
 using MassTransit;
-using static MessageContracts.MessageContract;
 
 var busControl = Bus.Factory.CreateUsingRabbitMq(cfg =>
 {
-    cfg.Host("localhost");
+    cfg.Host("localhost", 5672, "/", h =>
+    {
+        h.Username("guest");
+        h.Password("guest");
+    });
     cfg.ReceiveEndpoint("invoice-service", e =>
     {
         e.UseInMemoryOutbox();

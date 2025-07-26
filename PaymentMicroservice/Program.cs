@@ -3,7 +3,11 @@ using PaymentMicroservice;
 
 var busControl = Bus.Factory.CreateUsingRabbitMq(cfg =>
 {
-    cfg.Host("localhost");
+    cfg.Host("localhost", 5672, "/", h =>
+    {
+        h.Username("guest");
+        h.Password("guest");
+    });
     cfg.ReceiveEndpoint("payment-service", e =>
     {
         e.Consumer<InvoiceCreatedConsumer>(c =>
